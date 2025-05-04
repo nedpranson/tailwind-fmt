@@ -6,9 +6,9 @@ const getClassOrder = await resolveGetClassOrder(process.cwd()) // throws
 
 /**
   * @param {string} content
-  * @returns {{ start: number, end: number, formated: string }[]}
+  * @returns {{ start: number, end: number, formatted: string }[]}
   */
-export function format(content) {
+export function format(content) { // this should never throw, if getClassOrder does not
   const result = []
 
   const it = matchIterator(content)
@@ -22,8 +22,14 @@ export function format(content) {
     const end = it.idx - 1
     const start = end - match.length
 
-    console.log("before:", content.substring(start, end))
-    console.log("after:", sort(getClassOrder(classes)))
+    const formatted = sort(getClassOrder(classes))
+    const changed = !formatted.split(/[\s]+/).every((v, i) => v == classes[i])
+
+    changed && result.push({
+      start,
+      end,
+      formatted
+    })
   }
 
   return result
@@ -60,7 +66,7 @@ function sort(class_order) {
     result += prefix + className
   }
 
-  const join = result.length == 0 ? "" : " "
+  const join = (result.length === 0 || unknown.length === 0) ? "" : " "
   return result + join + unknown
 }
 
