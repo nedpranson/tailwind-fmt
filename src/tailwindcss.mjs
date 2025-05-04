@@ -9,7 +9,7 @@ import postcssImport from 'postcss-import'
 
 /**
   * @param {string} base_path 
-  * @returns {Promise<(classNames: string[]) => [ string, number | null ][]>}
+  * @returns {Promise<(classNames: string[]) => [ string, bigint | null ][]>}
   */
 export async function resolveGetClassOrder(base_path) { // how do we even catch errors in js?
   const tw_path = dirname(resolve('tailwindcss/package.json', [base_path])) // can throw
