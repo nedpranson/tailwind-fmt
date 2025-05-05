@@ -14,7 +14,7 @@ export function format(content, get_class_order) {
     if (!match) break
 
     const classes = match.split(/[\s]+/)
-    if (classes.length == 0) continue
+    if (classes.length === 0) continue
 
     const end = it.idx - 1
     const start = end - match.length

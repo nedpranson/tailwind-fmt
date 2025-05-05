@@ -1,7 +1,7 @@
 "use strict"
 
 import { createRequire } from "module"
-import { dirname } from "path"
+import { dirname, relative } from "path"
 import { pathToFileURL } from "url"
 import { readFile } from "fs/promises"
 import postcss from "postcss"
@@ -25,19 +25,19 @@ export async function resolveGetClassOrder(base_path, stylesheet_path) {
   const theme_path = stylesheet_path || tw_path + "/theme.css"
 
   const tw_file = _try(() => resolve("tailwindcss", [base_path]), () => {
-    console.log("error: tailwindcss is outdated, update to version 4.1.5 or higher.");
+    console.error("error: tailwindcss is outdated, update to version 4.1.5 or higher.");
     process.exit(1)
   })
 
   const tw = (await import(pathToFileURL(tw_file).toString())).default // can throw
 
   if (!tw.__unstable__loadDesignSystem) {
-    console.log("error: tailwindcss is outdated, update to version 4.1.5 or higher.");
+    console.error("error: tailwindcss is outdated, update to version 4.1.5 or higher.");
     process.exit(1)
   }
 
   const css = await readFile(theme_path, "utf8").catch((reason) => {
-    console.log(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+    console.error(`error: '${relative(base_path, stylesheet_path)}': ${strerror[reason.errno]}.`)
     process.exit(1)
   })
 
