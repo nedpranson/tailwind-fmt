@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-'use strict'
+"use strict"
 
-import { readdir, stat, readFile } from "fs/promises"
 import { join, relative, resolve } from "path"
-import { format } from "./format.mjs"
+import { readdir, stat, readFile } from "fs/promises"
 import { createWriteStream } from "fs"
+import { format } from "./format.mjs"
 import { strerror } from "./errno.mjs"
 
 const args = process.argv.slice(2)
@@ -17,7 +17,7 @@ if (args.length == 0) {
 const files = await resolveFiles(args) // handled
 
 await Promise.all(files.map(async (absolute_path) => { // we need to limit the async work
-  const content = await readFile(absolute_path, 'utf8').catch((reason) => {
+  const content = await readFile(absolute_path, "utf8").catch((reason) => {
     console.log(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
     process.exit(1)
   })

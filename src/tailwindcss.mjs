@@ -1,19 +1,21 @@
-'use strict'
+"use strict"
 
-import { createRequire } from 'module'
-import { dirname } from 'path'
-import { pathToFileURL } from 'url'
-import { readFile } from 'fs/promises'
-import postcss from 'postcss'
-import postcssImport from 'postcss-import'
+import { createRequire } from "module"
+import { dirname } from "path"
+import { pathToFileURL } from "url"
+import { readFile } from "fs/promises"
+import postcss from "postcss"
+import postcssImport from "postcss-import"
+
+// todo: handle them errors
 
 /**
   * @param {string} base_path 
   * @returns {Promise<(classNames: string[]) => [ string, bigint | null ][]>}
   */
 export async function resolveGetClassOrder(base_path) { // how do we even catch errors in js?
-  const tw_path = dirname(resolve('tailwindcss/package.json', [base_path])) // can throw
-  const tw_file = resolve('tailwindcss', [base_path]) // can throw
+  const tw_path = dirname(resolve("tailwindcss/package.json", [base_path])) // can throw
+  const tw_file = resolve("tailwindcss", [base_path]) // can throw
 
   const tw = (await import(pathToFileURL(tw_file).toString())).default // can throw
 
@@ -21,9 +23,9 @@ export async function resolveGetClassOrder(base_path) { // how do we even catch 
     throw "invalid tailwindcss version"
   }
 
-  const css = await readFile(tw_path + '/theme.css', 'utf8') // can throw
+  const css = await readFile(tw_path + "/theme.css", "utf8") // can throw
   const resolve_imports = postcss([postcssImport()])
-  const result = await resolve_imports.process(css, { from: tw_path + '/theme.css' })
+  const result = await resolve_imports.process(css, { from: tw_path + "/theme.css" })
 
   const design = await tw.__unstable__loadDesignSystem(result.css, {
     loadPlugin() {

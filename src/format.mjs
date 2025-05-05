@@ -1,6 +1,6 @@
-'use strict'
+"use strict"
 
-import { resolveGetClassOrder } from './tailwindcss.mjs'
+import { resolveGetClassOrder } from "./tailwindcss.mjs"
 
 const getClassOrder = await resolveGetClassOrder(process.cwd()) // throws
 
@@ -86,7 +86,7 @@ function matchIterator(content) { // we need to test this uvu?
   return { 
     idx: 0,
     next: function () {
-      let idx = content.indexOf('class')
+      let idx = content.indexOf("class")
       if (idx == -1) {
         return null
       }
@@ -97,7 +97,7 @@ function matchIterator(content) { // we need to test this uvu?
         if (idx++ == content.length) return null
       }
 
-      if (content[idx++] !== '=') {
+      if (content[idx++] !== "=") {
         return null
       }
 
@@ -120,7 +120,7 @@ function matchIterator(content) { // we need to test this uvu?
 
         // checking if quote is escaped
         for (let i = idx - 1; i >= start; i--) {
-          if (content[i] === '\\') continue
+          if (content[i] === "\\") continue
           const n = idx - i - 1
 
           if (n % 2 == 0) {
