@@ -15,5 +15,5 @@ npm install -D tailwind-fmt
 Make sure you have [Tailwind CSS](https://tailwindcss.com/docs/installation) installed.
 
 ```sh
-npx tailwind-fmt &lt;files...&gt;
+npx tailwind-fmt <files...>;
 ```
