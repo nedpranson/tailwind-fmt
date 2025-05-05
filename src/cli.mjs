@@ -5,8 +5,10 @@
 import { join, relative, resolve } from "path"
 import { readdir, stat, readFile } from "fs/promises"
 import { createWriteStream } from "fs"
+import { resolveGetClassOrder } from "./tailwindcss.mjs"
 import { format } from "./format.mjs"
 import { strerror } from "./errno.mjs"
+import { _try } from "./shared.mjs"
 
 const args = process.argv.slice(2)
 if (args.length == 0) {
@@ -15,6 +17,7 @@ if (args.length == 0) {
 }
 
 const files = await resolveFiles(args) // handled
+const get_class_order = await resolveGetClassOrder(process.cwd()) // throws
 
 await Promise.all(files.map(async (absolute_path) => { // we need to limit the async work
   const content = await readFile(absolute_path, "utf8").catch((reason) => {
@@ -22,19 +25,15 @@ await Promise.all(files.map(async (absolute_path) => { // we need to limit the a
     process.exit(1)
   })
 
-  const matches = format(content)
+  const matches = format(content, get_class_order)
   if (matches.length == 0) {
     return
   }
 
-  const out = (() => {
-    try {
-      return createWriteStream(absolute_path, { encoding: "utf8" })
-    } catch (reason) {
+  const out = _try(() => createWriteStream(absolute_path, { encoding: "utf8" }), (reason) => {
       console.log(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
       process.exit(1)
-    }
-  })()
+  })
 
   const { promise, resolve } = withResolvers()
 

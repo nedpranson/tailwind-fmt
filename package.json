@@ -1,10 +1,10 @@
 {
   "name": "tailwind-fmt",
   "description": "A formatter for sorting Tailwind CSS classes.",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "license": "MIT",
   "bin": {
-    "tailwind-fmt": "./src/cli.mjs"
+    "tailwind-fmt": "src/cli.mjs"
   },
   "exports": {
     "./package.json": "./package.json"
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/nedaras/tailwind-fmt"
+    "url": "git+https://github.com/nedaras/tailwind-fmt.git"
   },
   "bugs": {
     "url": "https://github.com/nedaras/tailwind-fmt/issues"

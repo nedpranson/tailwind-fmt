@@ -1,14 +1,11 @@
 "use strict"
 
-import { resolveGetClassOrder } from "./tailwindcss.mjs"
-
-const getClassOrder = await resolveGetClassOrder(process.cwd()) // throws
-
 /**
   * @param {string} content
+  * @param {(classNames: string[]) => [ string, bigint | null ][]} get_class_order 
   * @returns {{ start: number, end: number, formatted: string }[]}
   */
-export function format(content) { // this should never throw, if getClassOrder does not
+export function format(content, get_class_order) {
   const result = []
 
   const it = matchIterator(content)
@@ -22,7 +19,7 @@ export function format(content) { // this should never throw, if getClassOrder d
     const end = it.idx - 1
     const start = end - match.length
 
-    const formatted = sort(getClassOrder(classes))
+    const formatted = sort(get_class_order(classes))
     const changed = !formatted.split(/[\s]+/).every((v, i) => v == classes[i])
 
     changed && result.push({

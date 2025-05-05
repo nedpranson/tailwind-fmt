@@ -1,3 +1,5 @@
+"use strict"
+
 export const strerror = {
   [-2]: "no such file or directory",
   [-1]: "unknown error",
