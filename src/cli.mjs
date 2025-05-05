@@ -2,20 +2,66 @@
 
 'use strict'
 
-// console.log(format(`<div class="bg-white">`))
-// console.log(format(`<div class="bg-white\\\\\\""></div>`))
-// console.log(format(`<div class='bg-white'></div>`))
-// console.log(format(`<div class = "bg-white"></div>`))
-// console.log(format(`<div class = "\\\\\\"bg-white \\"   text-black" class='flex'></div>`))
-// console.log(format(`<button class="text-white px-4 sm:px-8 py-2 sm:py-3 bg-sky-700 hover:bg-sky-800">...</button>`))
-
-import { readdir, stat } from "fs/promises"
-import { join, resolve } from "path"
+import { readdir, stat, readFile } from "fs/promises"
+import { join, relative, resolve } from "path"
 import { format } from "./format.mjs"
-import { dir } from "console"
+import { createWriteStream } from "fs"
+import { strerror } from "./errno.mjs"
 
 const args = process.argv.slice(2)
-console.log(await resolveFiles(args))
+if (args.length == 0) {
+  console.error("error: expected at least one source file argument.")
+  process.exit(1)
+}
+
+const files = await resolveFiles(args) // handled
+
+await Promise.all(files.map(async (absolute_path) => { // we need to limit the async work
+  const content = await readFile(absolute_path, 'utf8').catch((reason) => {
+    console.log(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+    process.exit(1)
+  })
+
+  const matches = format(content)
+  if (matches.length == 0) {
+    return
+  }
+
+  const out = (() => {
+    try {
+      return createWriteStream(absolute_path, { encoding: "utf8" })
+    } catch (reason) {
+      console.log(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+      process.exit(1)
+    }
+  })()
+
+  const { promise, resolve } = withResolvers()
+
+  out.on("finish", () => {
+    console.log(relative(process.cwd(), absolute_path))
+    resolve()
+  })
+
+  out.on("error", (reason) => { // not all errors can have errno
+    console.log(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+    process.exit(1)
+  })
+
+  let idx = 0
+  matches.forEach(({ start, end, formatted }) => {
+    out.write(content.slice(idx, start))
+    out.write(formatted)
+    idx = end
+  })
+
+  out.write(content.slice(idx))
+  out.end()
+
+  return promise
+}))
+
+// todo: add like async pool with like idk 16 idk workers
 
 /**
   * @param {string[]} paths
@@ -26,14 +72,17 @@ async function resolveFiles(paths) {
 
   await Promise.all(paths.map(async (path) => {
     const absolute_path = resolve(path)
-    const file_stat = await stat(absolute_path) // throws
+    const file_stat = await stat(absolute_path).catch((reason) => {
+      console.log(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+      process.exit(1)
+    })
 
     if (file_stat.isFile()) {
       files.add(absolute_path)
     }
 
     if (file_stat.isDirectory()) {
-      const resolved = await resolveDir(absolute_path) // throws
+      const resolved = await resolveDir(absolute_path) // handled 
       resolved.forEach((file) => files.add(file))
     }
   }))
@@ -45,7 +94,10 @@ async function resolveFiles(paths) {
   * @param {string} absolute_path
   */
 async function resolveDir(absolute_path) {
-  const dirents = await readdir(absolute_path, { withFileTypes: true }) // throws
+  const dirents = await readdir(absolute_path, { withFileTypes: true }).catch((reason) => {
+      console.log(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+      process.exit(1)
+  })
 
   const files = []
   const dirs = []
@@ -61,9 +113,25 @@ async function resolveDir(absolute_path) {
   }
 
   if (dirs.length !== 0) {
-    const resolved = await Promise.all(dirs.map(resolveDir)) // throws
+    const resolved = await Promise.all(dirs.map(resolveDir)) // handled
     files.push(...resolved.flat())
   }
 
   return files
+}
+
+/**
+  * @template T
+  * @returns {{ promise: Promise<T>, resolve: (val: T | PromiseLike<T>) => void, reject: (reason?: any) => void }}
+  */
+function withResolvers() {
+  let resolve
+  let reject
+
+  const promise = new Promise((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+
+  return { promise, resolve, reject }
 }
