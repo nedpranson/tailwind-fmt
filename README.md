@@ -1,6 +1,6 @@
 <img src="https://github.com/nedaras/tailwind-fmt/blob/master/assets/logo.png?raw=true" alt="tailwind-fmt" />
 
-A formatter for Tailwind CSS v3.0+ that automatically sorts classes.
+A formatter for Tailwind CSS v4.1+ that automatically sorts classes.
 
 ## Installation
 

@@ -71,7 +71,7 @@ function sort(class_order) {
   * @param {string} content
   * @returns {{ idx: number, next: () => string | null }}
   */
-function matchIterator(content) { // we need to test this uvu?
+export function matchIterator(content) { // we need to test this uvu?
   // * class
   // * spaces
   // * =
@@ -83,6 +83,7 @@ function matchIterator(content) { // we need to test this uvu?
   return { 
     idx: 0,
     next: function () {
+      // todo: fix bad returns we should try finding till we can
       let idx = content.indexOf("class")
       if (idx == -1) {
         return null
@@ -95,6 +96,7 @@ function matchIterator(content) { // we need to test this uvu?
       }
 
       if (content[idx++] !== "=") {
+        // bad return
         return null
       }
 
@@ -104,7 +106,8 @@ function matchIterator(content) { // we need to test this uvu?
       }
 
       const quote = content[idx++]
-      if (quote !== '"' && quote !== "'") return null // wait quote can be escaped like \"
+      // bad return
+      if (quote !== '"' && quote !== "'") return null // should we handle \" class=\"text-white\"
 
       const start = idx
 

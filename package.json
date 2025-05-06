@@ -19,8 +19,14 @@
   "bugs": {
     "url": "https://github.com/nedaras/tailwind-fmt/issues"
   },
+  "scripts": {
+    "test": "npx uvu"
+  },
   "dependencies": {
     "postcss": "^8.5.3",
     "postcss-import": "^16.1.0"
+  },
+  "devDependencies": {
+    "uvu": "^0.5.6"
   }
 }
