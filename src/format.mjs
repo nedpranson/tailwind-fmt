@@ -71,73 +71,96 @@ function sort(class_order) {
   * @param {string} content
   * @returns {{ idx: number, next: () => string | null }}
   */
-export function matchIterator(content) { // we need to test this uvu?
-  // * class
-  // * spaces
-  // * =
-  // * spaces
-  // * quote
-  // * {}
-  // * quote
-
+export function matchIterator(content) {
   return { 
     idx: 0,
     next: function () {
-      // todo: fix bad returns we should try finding till we can
-      let idx = content.indexOf("class")
-      if (idx == -1) {
-        return null
-      }
-
-      idx += 5
-
-      while (/\s/.test(content[idx])) { 
-        if (idx++ == content.length) return null
-      }
-
-      if (content[idx++] !== "=") {
-        // bad return
-        return null
-      }
-
-      // out of index should not be a problem cuz we in js world
-      while (/\s/.test(content[idx])) { 
-        if (idx++ == content.length) return null
-      }
-
-      const quote = content[idx++]
-      // bad return
-      if (quote !== '"' && quote !== "'") return null // should we handle \" class=\"text-white\"
-
-      const start = idx
-
-      outer: while (true) {
-        while (content[idx] !== quote) {
-          if (idx++ == content.length) return null
+      while (true) {
+        let idx = content.indexOf("class")
+        if (idx === -1) {
+          return (content = "", null)
         }
 
-        if (quote == "'") break
+        if (idx !== 0 && !isWhitespace(content[idx - 1])) {
+          this.idx += 4
+          content = content.slice(idx + 4)
 
-        // checking if quote is escaped
-        for (let i = idx - 1; i >= start; i--) {
-          if (content[i] === "\\") continue
-          const n = idx - i - 1
+          continue
+        }
 
-          if (n % 2 == 0) {
-            break outer;
+        idx += 5
+
+        while (isWhitespace(content[idx])) { 
+          if (idx++ === content.length) return (content = "", null)
+        }
+
+        const equal = content[idx++]
+        if (idx === content.length) {
+          return (content = "", null)
+        }
+
+        if (equal !== "=") {
+          this.idx += idx - 1
+          content = content.slice(idx - 1)
+
+          continue
+        }
+
+        while (isWhitespace(content[idx])) { 
+          if (idx++ === content.length) return (content = "", null)
+        }
+
+        const quote = content[idx++]
+        if (idx === content.length) {
+          return (content = "", null)
+        }
+
+        if (quote !== '"' && quote !== "'") {
+          this.idx += idx - 1
+          content = content.slice(idx - 1)
+
+          continue
+        }
+
+        const start = idx
+
+        outer: while (true) {
+          while (content[idx] !== quote) {
+            if (idx++ === content.length) return (content = "", null)
           }
-          break
+
+          if (quote == "'") break
+
+          // checking if quote is escaped
+          for (let i = idx; i >= start; i--) {
+            if (content[i - 1] === "\\") continue
+            const n = idx - i - 2
+
+            if (n % 2 === 0) {
+              break outer;
+            }
+            break
+          }
+          idx++
         }
-        idx++
+
+        const end = idx++
+        this.idx += idx
+
+        const classes = content.slice(start, end)
+        content = content.slice(idx)
+
+        return classes
       }
-
-      const end = idx++
-      this.idx += idx
-
-      const classes = content.slice(start, end)
-      content = content.slice(idx)
-
-      return classes
     }
   }
+}
+
+
+/**
+  * @param {string} c
+  * @return {boolean}
+  */
+function isWhitespace(c) {
+  return c === " " || (c >= "\t" && c <= "\r")
 }

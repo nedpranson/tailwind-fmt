@@ -10,41 +10,64 @@ test("match iterator", () => {
     },
 
     {
-      data: `<div class="\\"" class="\\\\\\"">...</div>`,
+      data: `<div class="\\"" class="\\\\\\"" class="\\\\">...</div>`,
       matches: [
         "\\\"",
         "\\\\\\\"",
-      ]
+        "\\\\",
+      ],
+    },
+
+    {
+      data: `<div class="prefix \\" suffix" class="prefix \\\\\\" suffix" class="prefix \\\\ suffix">...</div>`,
+      matches: [
+        "prefix \\\" suffix",
+        "prefix \\\\\\\" suffix",
+        "prefix \\\\ suffix",
+      ],
     },
 
     {
       data: `<div class\r\n   =\t   \r\n "white spaces">...</div>`,
-      matches: [ "white spaces" ]
+      matches: [ "white spaces" ],
+    },
+
+    {
+      data: `<divclass="white spaces">...</div>`,
+      matches: [],
+    },
+
+    {
+      data: `<div class="" class=" ">...</div>`,
+      matches: [
+        "", 
+        " "
+      ],
     },
 
     {
       data: `<div class\t=\t'opened class='bg-white'">...</div>`,
-      matches: [ "opened class=" ]
+      matches: [ "opened class=" ],
     },
 
     {
       data: `<div class\r=\t'hello">...</div>`,
-      matches: [ null ]
+      matches: [],
     },
 
     {
       data: `<div class="">...</div>`,
-      matches: [ null ]
+      matches: [ "" ],
     },
 
     {
       data: `<div CLASS="uppercase">...</div>`,
-      matches: [ null ]
+      matches: [],
     },
 
     {
       data: `<div class="class" classb="classb">...</div>`,
-      matches: [ "class" ]
+      matches: [ "class" ],
     },
 
     {
@@ -52,12 +75,37 @@ test("match iterator", () => {
       matches: [ 
         "both",
         "valid",
-      ]
+      ],
     },
 
     {
       data: `<div class class="valid">...</div>`,
-      matches: [ "valid" ]
+      matches: [ "valid" ],
+    },
+
+    {
+      data: `<div class== class="valid"">...</div>`,
+      matches: [ "valid" ],
+    },
+
+    {
+      data: `<div class=/" class="valid" id="1""">...</div>`,
+      matches: [ "valid" ],
+    },
+
+    {
+      data: `<div class=/"class="not valid" id="1""">...</div>`,
+      matches: [],
+    },
+
+    {
+      data: `<div class="class='not valid'">...</div>`,
+      matches: [ "class='not valid'" ],
+    },
+
+    {
+      data: `<div class="text-red-500 \\"bg-blue\\">">...</div>`,
+      matches: [ "text-red-500 \\\"bg-blue\\\">" ],
     },
   ]
 
@@ -66,6 +114,7 @@ test("match iterator", () => {
     for (const match of matches) {
       assert.equal(it.next(), match)
     }
+    assert.is(it.next(), null)
     assert.is(it.next(), null)
   }
 })
