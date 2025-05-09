@@ -1,6 +1,8 @@
 "use strict"
 
+// todo: fix them errors cuz this is all wrong do them with like IDS EACCES...
 export const strerror = {
+  [-13]: "permission denied",
   [-2]: "no such file or directory",
   [-1]: "unknown error",
   [0]: "success",

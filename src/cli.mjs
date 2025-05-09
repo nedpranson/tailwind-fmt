@@ -8,8 +8,9 @@ import { createWriteStream } from "fs"
 import { resolveGetClassOrder } from "./tailwindcss.mjs"
 import { format } from "./format.mjs"
 import { strerror } from "./errno.mjs"
-import { _try } from "./shared.mjs"
+import { _try, limited, withResolvers } from "./shared.mjs"
 
+const limit = limited(8)
 const args = process.argv.slice(2)
 
 const sources = []
@@ -21,6 +22,7 @@ if (args.length === 0) {
 }
 
 for (let i = 0; i < args.length; i++) {
+  // we should treat every -- prefixed thingy an option and say that idk --help is not an option
   if (args[i] === "--input") {
     const path = args[++i]
     if (path === undefined) {
@@ -39,10 +41,10 @@ if (sources.length === 0) {
   process.exit(1)
 }
 
-const files = await resolveFiles(sources) // handled
+const files = await resolveFiles(sources)
 const get_class_order = await resolveGetClassOrder(process.cwd(), stylesheet_path) // throws
 
-await Promise.all(files.map(async (absolute_path) => { // we need to limit the async work
+await Promise.all(files.map((absolute_path) => limit(async () => {
   const content = await readFile(absolute_path, "utf8").catch((reason) => {
     console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
     process.exit(1)
@@ -81,9 +83,7 @@ await Promise.all(files.map(async (absolute_path) => { // we need to limit the a
   out.end()
 
   return promise
-}))
-
-// todo: add like async pool with like idk 16 idk workers
+})))
 
 /**
   * @param {string[]} paths
@@ -94,7 +94,7 @@ async function resolveFiles(paths) {
 
   await Promise.all(paths.map(async (path) => {
     const absolute_path = resolve(path)
-    const file_stat = await stat(absolute_path).catch((reason) => {
+    const file_stat = await limit(() => stat(absolute_path)).catch((reason) => {
       console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
       process.exit(1)
     })
@@ -104,7 +104,7 @@ async function resolveFiles(paths) {
     }
 
     if (file_stat.isDirectory()) {
-      const resolved = await resolveDir(absolute_path) // handled 
+      const resolved = await resolveDir(absolute_path) // handled
       resolved.forEach((file) => files.add(file))
     }
   }))
@@ -114,10 +114,11 @@ async function resolveFiles(paths) {
 
 /**
   * @param {string} absolute_path
+  * @returns {Promise<string[]>}
   */
 async function resolveDir(absolute_path) {
-  const dirents = await readdir(absolute_path, { withFileTypes: true }).catch((reason) => {
-      console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+  const dirents = await limit(() => readdir(absolute_path, { withFileTypes: true })).catch((reason) => {
+      console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`) // todo: make like unknown error: reason.toString() idk
       process.exit(1)
   })
 
@@ -135,25 +136,9 @@ async function resolveDir(absolute_path) {
   }
 
   if (dirs.length !== 0) {
-    const resolved = await Promise.all(dirs.map(resolveDir)) // handled
+    const resolved = await Promise.all(dirs.map((dir) => resolveDir(dir))) // handled
     files.push(...resolved.flat())
   }
 
   return files
-}
-
-/**
-  * @template T
-  * @returns {{ promise: Promise<T>, resolve: (val: T | PromiseLike<T>) => void, reject: (reason?: any) => void }}
-  */
-function withResolvers() {
-  let resolve
-  let reject
-
-  const promise = new Promise((res, rej) => {
-    resolve = res
-    reject = rej
-  })
-
-  return { promise, resolve, reject }
 }

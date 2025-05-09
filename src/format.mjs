@@ -156,7 +156,6 @@ export function matchIterator(content) {
   }
 }
 
-
 /**
   * @param {string} c
   * @return {boolean}

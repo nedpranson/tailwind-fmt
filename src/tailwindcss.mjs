@@ -4,7 +4,7 @@ import { createRequire } from "module"
 import { dirname, relative } from "path"
 import { pathToFileURL } from "url"
 import { readFile } from "fs/promises"
-import postcss from "postcss"
+import postcss, { CssSyntaxError } from "postcss"
 import postcssImport from "postcss-import"
 import { _try } from "./shared.mjs"
 import { strerror } from "./errno.mjs"
@@ -37,19 +37,39 @@ export async function resolveGetClassOrder(base_path, stylesheet_path) {
   }
 
   const css = await readFile(theme_path, "utf8").catch((reason) => {
-    console.error(`error: '${relative(base_path, stylesheet_path)}': ${strerror[reason.errno]}.`)
+    console.error(`error: '${relative(base_path, theme_path)}': ${strerror[reason.errno]}.`)
     process.exit(1)
   })
 
-  // todo: we need to handle error here
+  // todo: i guess we can sat these erros are like unexpected
 
-  const resolve_imports = postcss([postcssImport()])
-  const result = await resolve_imports.process(css, { from: theme_path })
+  const resolve_imports = _try(() => postcss([postcssImport()]), (reason) => {
+    console.error("unexpected error: " + reason.toString())
+    process.exit(1)
+  })
+
+  const result = await resolve_imports.process(css, { from: theme_path }).catch((reason) => {
+    let suffix = ""
+    if (reason.line) {
+      let line = reason.source.split("\n")[reason.line - 1]
+      suffix = ` near '${line}'` 
+    } 
+    console.error(`error: '${relative(base_path, theme_path)}': ${reason.reason.toLowerCase()}${suffix}.`)
+    process.exit(1)
+  })
 
   const design = await tw.__unstable__loadDesignSystem(result.css, {
     loadPlugin() {
       return () => {}
     },
+  }).catch((reason) => {
+    if (reason instanceof Error) {
+      console.log(reason.message)
+    }
+
+    console.error(reason)
+    console.error("unexpected error: " + reason.toString())
+    process.exit(1)
   })
 
   return (classNames) => {
