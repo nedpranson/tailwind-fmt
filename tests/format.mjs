@@ -2,6 +2,8 @@ import { test } from "uvu"
 import * as assert from "uvu/assert"
 import { matchIterator } from "../src/format.mjs"
 
+// todo: handle "class=\"escpaed quotes\""
+
 test("match iterator", () => {
   const cases = [
     { 

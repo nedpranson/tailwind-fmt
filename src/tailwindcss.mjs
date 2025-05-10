@@ -29,7 +29,14 @@ export async function resolveGetClassOrder(base_path, stylesheet_path) {
     process.exit(1)
   })
 
-  const tw = (await import(pathToFileURL(tw_file).toString())).default // todo: catch this
+  const tw = (await import(pathToFileURL(tw_file).toString()).catch((reason) => {
+    if (reason.code) {
+      console.error(`${relative(base_path, tw_file)}: ${strerror[reason.code]}.`)
+      process.exit(1)
+    }
+    console.error("Tailwindcss is outdated, update to version 4.1.5 or higher."); // ??? idk if this is good
+    process.exit(1)
+  })).default
 
   if (!tw.__unstable__loadDesignSystem) {
     console.error("Tailwindcss is outdated, update to version 4.1.5 or higher.");
@@ -69,7 +76,7 @@ export async function resolveGetClassOrder(base_path, stylesheet_path) {
   }
 
   return (classNames) => {
-    design.getClassOrder(classNames)
+    return design.getClassOrder(classNames)
   }
 }
 

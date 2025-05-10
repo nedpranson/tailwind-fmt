@@ -10,7 +10,9 @@ import { format } from "./format.mjs"
 import { strerror } from "./errno.mjs"
 import { _try, limited, withResolvers } from "./shared.mjs"
 
-const limit = limited(8)
+// todo: add logging
+
+const limit = limited(16)
 const args = process.argv.slice(2)
 
 const sources = []
