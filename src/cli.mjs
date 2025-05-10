@@ -17,27 +17,32 @@ const sources = []
 let stylesheet_path = null
 
 if (args.length === 0) {
-  console.log("usage: npx tailwind-fmt [--input input.css] [files...].")
-  process.exit(0)
+  console.error("Usage 'npx tailwind-fmt [--input input.css] [files...]'.")
+  process.exit(1)
 }
 
 for (let i = 0; i < args.length; i++) {
-  // we should treat every -- prefixed thingy an option and say that idk --help is not an option
   if (args[i] === "--input") {
     const path = args[++i]
     if (path === undefined) {
-      console.error("error: option '--input' requires an argument.")
+      console.error("Option '--input' requires an argument.")
       process.exit(1)
     }
 
     stylesheet_path = resolve(path)
     continue
   }
+
+  if (args[i].startsWith("--")) {
+      console.error(`Unrecognized option '${args[i]}'.`)
+      process.exit(1)
+  }
+
   sources.push(args[i])
 }
 
 if (sources.length === 0) {
-  console.error("error: expected at least one source file argument.")
+  console.error("Expected at least one source file argument.")
   process.exit(1)
 }
 
@@ -46,7 +51,7 @@ const get_class_order = await resolveGetClassOrder(process.cwd(), stylesheet_pat
 
 await Promise.all(files.map((absolute_path) => limit(async () => {
   const content = await readFile(absolute_path, "utf8").catch((reason) => {
-    console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+    console.error(`${relative(process.cwd(), absolute_path)}: ${strerror[reason.code]}.`)
     process.exit(1)
   })
 
@@ -56,7 +61,7 @@ await Promise.all(files.map((absolute_path) => limit(async () => {
   }
 
   const out = _try(() => createWriteStream(absolute_path, { encoding: "utf8" }), (reason) => {
-      console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+      console.error(`${relative(process.cwd(), absolute_path)}: ${strerror[reason.code]}.`)
       process.exit(1)
   })
 
@@ -67,8 +72,8 @@ await Promise.all(files.map((absolute_path) => limit(async () => {
     resolve()
   })
 
-  out.on("error", (reason) => { // not all errors can have errno
-    console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+  out.on("error", (reason) => {
+    console.error(`${relative(process.cwd(), absolute_path)}: ${strerror[reason.code]}.`)
     process.exit(1)
   })
 
@@ -95,7 +100,7 @@ async function resolveFiles(paths) {
   await Promise.all(paths.map(async (path) => {
     const absolute_path = resolve(path)
     const file_stat = await limit(() => stat(absolute_path)).catch((reason) => {
-      console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`)
+      console.error(`${relative(process.cwd(), absolute_path)}: ${strerror[reason.code]}.`)
       process.exit(1)
     })
 
@@ -118,7 +123,7 @@ async function resolveFiles(paths) {
   */
 async function resolveDir(absolute_path) {
   const dirents = await limit(() => readdir(absolute_path, { withFileTypes: true })).catch((reason) => {
-      console.error(`error: '${relative(process.cwd(), absolute_path)}': ${strerror[reason.errno]}.`) // todo: make like unknown error: reason.toString() idk
+      console.error(`${relative(process.cwd(), absolute_path)}: ${strerror[reason.code]}.`) // todo: make like unknown error: reason.toString() idk
       process.exit(1)
   })
 

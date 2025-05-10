@@ -4,7 +4,7 @@ import { createRequire } from "module"
 import { dirname, relative } from "path"
 import { pathToFileURL } from "url"
 import { readFile } from "fs/promises"
-import postcss, { CssSyntaxError } from "postcss"
+import postcss from "postcss"
 import postcssImport from "postcss-import"
 import { _try } from "./shared.mjs"
 import { strerror } from "./errno.mjs"
@@ -18,43 +18,38 @@ import { strerror } from "./errno.mjs"
   */
 export async function resolveGetClassOrder(base_path, stylesheet_path) {
   const tw_path = _try(() => dirname(resolve("tailwindcss/package.json", [base_path])), () => {
-    console.error("error: tailwindcss is not installed.")
+    console.error("Tailwindcss is not installed.")
     process.exit(1)
   })
 
   const theme_path = stylesheet_path || tw_path + "/theme.css"
 
   const tw_file = _try(() => resolve("tailwindcss", [base_path]), () => {
-    console.error("error: tailwindcss is outdated, update to version 4.1.5 or higher.");
+    console.error("Tailwindcss is outdated, update to version 4.1.5 or higher.");
     process.exit(1)
   })
 
-  const tw = (await import(pathToFileURL(tw_file).toString())).default // can throw
+  const tw = (await import(pathToFileURL(tw_file).toString())).default // todo: catch this
 
   if (!tw.__unstable__loadDesignSystem) {
-    console.error("error: tailwindcss is outdated, update to version 4.1.5 or higher.");
+    console.error("Tailwindcss is outdated, update to version 4.1.5 or higher.");
     process.exit(1)
   }
 
   const css = await readFile(theme_path, "utf8").catch((reason) => {
-    console.error(`error: '${relative(base_path, theme_path)}': ${strerror[reason.errno]}.`)
+    console.error(`${relative(base_path, theme_path)}: ${strerror[reason.code]}.`)
     process.exit(1)
   })
 
-  // todo: i guess we can sat these erros are like unexpected
-
   const resolve_imports = _try(() => postcss([postcssImport()]), (reason) => {
-    console.error("unexpected error: " + reason.toString())
+    const suffix = reason.message.endsWith(".") ? "" : "."
+    console.error(`postcss: ${reason.message}${suffix}`)
     process.exit(1)
   })
 
   const result = await resolve_imports.process(css, { from: theme_path }).catch((reason) => {
-    let suffix = ""
-    if (reason.line) {
-      let line = reason.source.split("\n")[reason.line - 1]
-      suffix = ` near '${line}'` 
-    } 
-    console.error(`error: '${relative(base_path, theme_path)}': ${reason.reason.toLowerCase()}${suffix}.`)
+    const suffix = reason.message.endsWith(".") ? "" : "."
+    console.error(`postcss: ${reason.message}${suffix}`)
     process.exit(1)
   })
 
@@ -63,17 +58,18 @@ export async function resolveGetClassOrder(base_path, stylesheet_path) {
       return () => {}
     },
   }).catch((reason) => {
-    if (reason instanceof Error) {
-      console.log(reason.message)
-    }
-
-    console.error(reason)
-    console.error("unexpected error: " + reason.toString())
+    const suffix = reason.message.endsWith(".") ? "" : "."
+    console.error(`tailwindcss: ${reason.message}${suffix}`)
     process.exit(1)
   })
 
+  if (!design.getClassOrder) {
+    console.error("Tailwindcss is outdated, update to version 4.1.5 or higher.");
+    process.exit(1)
+  }
+
   return (classNames) => {
-    return design.getClassOrder(classNames) // todo: check if getCLassOrder is defined
+    design.getClassOrder(classNames)
   }
 }
 
