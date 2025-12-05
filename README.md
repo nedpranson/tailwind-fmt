@@ -1,4 +1,4 @@
-<img src="https://github.com/nedaras/tailwind-fmt/blob/master/assets/logo.png?raw=true" alt="tailwind-fmt" />
+<img src="https://github.com/nedpranson/tailwind-fmt/blob/master/assets/logo.png?raw=true" alt="tailwind-fmt" />
 
 A formatter for Tailwind CSS v4.1+ that automatically sorts classes.
 
